@@ -1,17 +1,30 @@
 {
-    "builds": [
-        {
-            "src": "dashboard_arkadia_v2/wsgi.py",
-            "use": "@vercel/python",
-            "config": {
-                "runtime": "python3.12"
-            }
-        }
-    ],
-    "routes": [
-        {
-            "src": "/(.*)",
-            "dest": "/dashboard_arkadia_v2/wsgi.py"
-        }
-    ]
+  "builds": [
+    {
+      "src": "dashboard_arkadia_v2/services/exchange_service.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb",
+        "runtime": "python3.9"
+      }
+    },
+    {
+      "src": "dashboard_arkadia_v2/wsgi.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "15mb",
+        "runtime": "python3.9"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/services/exchange_service.py",
+      "dest": "/dashboard_arkadia_v2/services/exchange_service.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/dashboard_arkadia_v2/wsgi.py"
+    }
+  ]
 }

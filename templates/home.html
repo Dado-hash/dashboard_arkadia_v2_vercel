@@ -1,0 +1,26 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage - Dashboard Arkadia</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}"> <!-- Assicurati che il tuo file CSS sia incluso -->
+</head>
+<body>
+    <div class="container mt-custom"> <!-- Utilizza la classe personalizzata qui -->
+        <div class="row justify-content-center">
+            <div class="col-md-6 text-center">
+                <h1>Welcome to Dashboard Arkadia</h1>
+                <p class="lead">Please register or login to continue</p>
+                <div class="mt-4">
+                    <a href="{% url 'register' %}" class="btn btn-primary btn-lg mx-2">Register</a>
+                    <a href="{% url 'login' %}" class="btn btn-secondary btn-lg mx-2">Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

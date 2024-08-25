@@ -1,0 +1,17 @@
+{
+    "builds": [
+        {
+            "src": "dashboard_arkadia_v2/wsgi.py",
+            "use": "@vercel/python",
+            "config": {
+                "runtime": "python3.12"
+            }
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "/dashboard_arkadia_v2/wsgi.py"
+        }
+    ]
+}

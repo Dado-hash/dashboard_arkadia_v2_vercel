@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <!-- Selettore del Fondo e della Valuta -->
+    <div class="row mt-2">
+        <div class="col-md-6 offset-md-3">
+            <div class="d-flex justify-content-center align-items-end">
+                <form method="get" class="d-flex flex-column me-3">
+                    <div class="form-group">
+                        <label for="fundSelector">Select Fund:</label>
+                        <select id="fundSelector" name="fund" class="form-control" onchange="this.form.submit()">
+                            <option value="">-- Select Fund --</option>
+                            {% for fund in funds %}
+                                <option value="{{ fund.id }}" {% if fund == selected_fund %}selected{% endif %}>{{ fund.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+                <form method="get" class="d-flex flex-column me-3">
+                    <div class="form-group">
+                        <label for="currencySelector">Select Currency:</label>
+                        <select id="currencySelector" name="currency" class="form-control" onchange="this.form.submit()">
+                            <option value="USD" {% if selected_currency == 'USD' %}selected{% endif %}>USD</option>
+                            <option value="EUR" {% if selected_currency == 'EUR' %}selected{% endif %}>EUR</option>
+                        </select>
+                    </div>
+                </form>
+                <form method="post" action="{% url 'save_report' %}" class="d-flex align-items-end">
+                    {% csrf_token %}
+                    <input type="hidden" name="fund_id" value="{{ selected_fund.id }}">
+                    <input type="hidden" name="currency" value="{{ selected_currency }}">
+                    <button type="submit" class="btn btn-primary">Save Report</button>
+                </form>
+            </div>
+        </div>
+    </div>    
+    
+    <!-- Performance del Fondo -->
+    {% if selected_fund %}
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <h4>Performance for {{ selected_fund.name }}</h4>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Performance Type</th>
+                        <th>Value ({{ selected_currency }})</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>YTD</td>
+                        <td class="{{ fund_performance.ytd_class }}">
+                            {% if selected_currency == 'USD' %}
+                                {{ fund_performance.ytd.value|default:"N/A" }}%
+                            {% else %}
+                                {{ fund_performance.ytd.value_eur|default:"N/A" }}%
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>MTD</td>
+                        <td class="{{ fund_performance.mtd_class }}">
+                            {% if selected_currency == 'USD' %}
+                                {{ fund_performance.mtd.value|default:"N/A" }}%
+                            {% else %}
+                                {{ fund_performance.mtd.value_eur|default:"N/A" }}%
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>WTD</td>
+                        <td class="{{ fund_performance.wtd_class }}">
+                            {% if selected_currency == 'USD' %}
+                                {{ fund_performance.wtd.value|default:"N/A" }}%
+                            {% else %}
+                                {{ fund_performance.wtd.value_eur|default:"N/A" }}%
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><strong>Latest Balance ({{ selected_currency }}):</strong> 
+                            {% if selected_currency == 'USD' %}
+                                {{ fund_performance.latest_balance.value_usd|default:"N/A" }}
+                            {% else %}
+                                {{ fund_performance.latest_balance.value_eur|default:"N/A" }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Performance delle Strategie -->
+    <div class="row mt-2">
+        <div class="col-md-12">
+            <h4>Strategy Performances</h4>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Strategy</th>
+                        <th>YTD</th>
+                        <th>MTD</th>
+                        <th>WTD</th>
+                        <th>Latest Balance ({{ selected_currency }})</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sp in strategy_performance %}
+                    <tr>
+                        <td>{{ sp.strategy.name }}</td>
+                        <td class="{{ sp.ytd_class }}">
+                            {% if selected_currency == 'USD' %}
+                                {{ sp.ytd.value|default:"N/A" }}%
+                            {% else %}
+                                {{ sp.ytd.value_eur|default:"N/A" }}%
+                            {% endif %}
+                        </td>
+                        <td class="{{ sp.mtd_class }}">
+                            {% if selected_currency == 'USD' %}
+                                {{ sp.mtd.value|default:"N/A" }}%
+                            {% else %}
+                                {{ sp.mtd.value_eur|default:"N/A" }}%
+                            {% endif %}
+                        </td>
+                        <td class="{{ sp.wtd_class }}">
+                            {% if selected_currency == 'USD' %}
+                                {{ sp.wtd.value|default:"N/A" }}%
+                            {% else %}
+                                {{ sp.wtd.value_eur|default:"N/A" }}%
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if selected_currency == 'USD' %}
+                                {{ sp.latest_balance.value_usd|default:"N/A" }}
+                            {% else %}
+                                {{ sp.latest_balance.value_eur|default:"N/A" }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Peso Percentuale delle Strategie -->
+    <div class="row mt-2">
+        <div class="col-md-12">
+            <h4>Strategy Weights</h4>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Strategy</th>
+                        <th>Balance ({{ selected_currency }})</th>
+                        <th>Weight (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sw in strategy_weights %}
+                    <tr>
+                        <td>{{ sw.strategy }}</td>
+                        <td>{{ sw.balance|floatformat:2 }}</td>
+                        <td>{{ sw.weight|floatformat:2 }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+
+{% block title %}Strategies{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    
+    <!-- Selettori della Strategia, della Metrica e della Valuta -->
+    <div class="row mt-4">
+        <div class="col-md-2 d-flex justify-content-center align-items-center">
+            <div id="latestValue" class="alert alert-info text-center" role="alert">
+                Actual: <span id="latestValueText">N/A</span>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <label for="strategySelector" class="form-label">Select Strategy:</label>
+            <select id="strategySelector" class="form-select mb-3">
+                {% for strategy in strategies %}
+                    <option value="{{ strategy.id }}">{{ strategy.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="metricSelector" class="form-label">Select Metric:</label>
+            <select id="metricSelector" class="form-select mb-3">
+                <option value="balance">Balance</option>
+                <option value="daily_performance">Daily Performance</option>
+                <option value="weekly_performance">Weekly Performance</option>
+                <option value="monthly_performance">Monthly Performance</option>
+                <option value="annual_performance">Annual Performance</option>
+                <option value="cumulative_performance">Cumulative Performance</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="currencySelector" class="form-label">Select Currency:</label>
+            <select id="currencySelector" class="form-select mb-3">
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Dettaglio della Strategia -->
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <canvas id="strategyPerformanceChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Tabella dell'allocazione degli asset -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <h4 class="text-center">Asset Allocation</h4>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Asset</th>
+                        <th>Amount</th>
+                        <th>Value (USD)</th>
+                        <th>Percentage</th>
+                    </tr>
+                </thead>
+                <tbody id="assetAllocationTableBody">
+                    <!-- I dati saranno riempiti dinamicamente tramite JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.2/dist/chart.umd.js" integrity="sha384-eI7PSr3L1XLISH8JdDII5YN/njoSsxfbrkCTnJrzXt+ENP5MOVBxD+l6sEG4zoLp" crossorigin="anonymous"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var strategies = JSON.parse('{{ strategies_data|escapejs }}');
+        var strategySelector = document.getElementById('strategySelector');
+        var metricSelector = document.getElementById('metricSelector');
+        var currencySelector = document.getElementById('currencySelector');
+        var ctx = document.getElementById('strategyPerformanceChart').getContext('2d');
+        var chart;
+        var latestValueText = document.getElementById('latestValueText');
+
+        function updateChart(strategyId, metric, currency) {
+            var strategy = strategies.find(s => s.id === parseInt(strategyId));
+            if (strategy) {
+                var labels = [];
+                var data = [];
+                var label = '';
+                var chartType = 'line';
+                var backgroundColors = [];
+                var latestValue = 'N/A';
+
+                // Modifica i dati in base alla valuta selezionata
+                if (metric === 'balance') {
+                    labels = strategy.balance_labels;
+                    data = currency === 'USD' ? strategy.balance_values : strategy.balance_values_eur;
+                    label = strategy.name + ' Balance (' + currency + ')';
+                    latestValue = data[data.length - 1] || 'N/A';
+                } else if (metric === 'daily_performance') {
+                    labels = strategy.daily_labels;
+                    data = currency === 'USD' ? strategy.daily_values : strategy.daily_values_eur;
+                    label = strategy.name + ' Daily Performance (%)';
+                    chartType = 'bar';
+                    latestValue = data[data.length - 1] || 'N/A';
+                } else if (metric === 'weekly_performance') {
+                    labels = strategy.weekly_labels;
+                    data = currency === 'USD' ? strategy.weekly_values : strategy.weekly_values_eur;
+                    label = strategy.name + ' Weekly Performance (%)';
+                    chartType = 'bar';
+                    latestValue = data[data.length - 1] || 'N/A';
+                } else if (metric === 'monthly_performance') {
+                    labels = strategy.monthly_labels;
+                    data = currency === 'USD' ? strategy.monthly_values : strategy.monthly_values_eur;
+                    label = strategy.name + ' Monthly Performance (%)';
+                    chartType = 'bar';
+                    latestValue = data[data.length - 1] || 'N/A';
+                } else if (metric === 'annual_performance') {
+                    labels = strategy.annual_labels;
+                    data = currency === 'USD' ? strategy.annual_values : strategy.annual_values_eur;
+                    label = strategy.name + ' Annual Performance (%)';
+                    chartType = 'bar';
+                    latestValue = data[data.length - 1] || 'N/A';
+                } else if (metric === 'cumulative_performance') {
+                    labels = strategy.cumulative_labels;
+                    data = currency === 'USD' ? strategy.cumulative_values : strategy.cumulative_values_eur;
+                    label = strategy.name + ' Cumulative Performance (%)';
+                    latestValue = data[data.length - 1] || 'N/A';
+                }
+
+                if (chartType === 'bar') {
+                    backgroundColors = data.map(value => value < 0 ? 'rgba(255, 99, 132, 0.2)' : 'rgba(75, 192, 192, 0.2)');
+                }
+
+                if (chart) {
+                    chart.destroy();
+                }
+
+                chart = new Chart(ctx, {
+                    type: chartType,
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: label,
+                            data: data,
+                            borderColor: chartType === 'line' ? 'rgba(75, 192, 192, 1)' : undefined,
+                            backgroundColor: chartType === 'bar' ? backgroundColors : undefined,
+                            borderWidth: 2,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            x: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Value'
+                                }
+                            }
+                        }
+                    }
+                });
+
+                latestValueText.textContent = latestValue;
+
+                // Aggiorna la tabella dell'allocazione degli asset
+                var tableBody = document.getElementById('assetAllocationTableBody');
+                tableBody.innerHTML = ''; // Svuota la tabella
+                strategy.asset_allocation.forEach(function(asset) {
+                    var row = document.createElement('tr');
+                    var nameCell = document.createElement('td');
+                    var amountCell = document.createElement('td');
+                    var valueCell = document.createElement('td');
+                    var percentageCell = document.createElement('td');
+
+                    nameCell.textContent = asset.name;
+                    amountCell.textContent = asset.amount.toFixed(2);
+                    valueCell.textContent = asset.value_usd.toFixed(2);  // Questo valore è sempre in USD
+                    percentageCell.textContent = asset.percentage.toFixed(2) + '%';
+
+                    row.appendChild(nameCell);
+                    row.appendChild(amountCell);
+                    row.appendChild(valueCell);
+                    row.appendChild(percentageCell);
+
+                    tableBody.appendChild(row);
+                });
+            }
+        }
+
+        strategySelector.addEventListener('change', function() {
+            updateChart(this.value, metricSelector.value, currencySelector.value);
+        });
+
+        metricSelector.addEventListener('change', function() {
+            updateChart(strategySelector.value, this.value, currencySelector.value);
+        });
+
+        currencySelector.addEventListener('change', function() {
+            updateChart(strategySelector.value, metricSelector.value, this.value);
+        });
+
+        // Initial load
+        if (strategies.length > 0) {
+            updateChart(strategySelector.value, metricSelector.value, currencySelector.value);
+        }
+    });
+</script>
+{% endblock %}

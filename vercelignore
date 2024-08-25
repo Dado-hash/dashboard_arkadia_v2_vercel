@@ -1,0 +1,6 @@
+tests/
+docs/
+*.md
+*.txt
+*.pyc
+__pycache__/

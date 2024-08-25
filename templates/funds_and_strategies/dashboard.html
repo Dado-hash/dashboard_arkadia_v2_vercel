@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center">Dashboard</h2>
+    <p class="text-center">Welcome to the Arkadia Dashboard!</p>
+    
+    <!-- Area del grafico -->
+    <div class="row justify-content-center mt-2">
+        <div class="col-md-10"> <!-- Aumenta la larghezza -->
+            <div class="chart-container" style="position: relative; height:70vh; width:100%"> <!-- Aggiungi uno stile inline per altezza -->
+                <canvas id="bitcoinChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Citation -->
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <p><em>"It might make sense just to get some in case it catches on." - Satoshi Nakamoto</em></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.2/dist/chart.umd.js" integrity="sha384-eI7PSr3L1XLISH8JdDII5YN/njoSsxfbrkCTnJrzXt+ENP5MOVBxD+l6sEG4zoLp" crossorigin="anonymous"></script>
+<script>
+
+    var labels = JSON.parse('{{ labels|safe }}');
+    var data = JSON.parse('{{ data|safe }}');
+    
+    var ctx = document.getElementById('bitcoinChart').getContext('2d');
+    var bitcoinChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Bitcoin Price',
+                data: data,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 2,
+                fill: false
+            }]
+        },
+        options: {
+            scales: {
+                x: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                },
+                y: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Price (USD)'
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

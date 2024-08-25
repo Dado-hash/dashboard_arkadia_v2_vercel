@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+
+{% block title %}Funds{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    
+    <!-- Selettori del Fondo, della Metrica e della Valuta -->
+    <div class="row mt-4">
+        <div class="col-md-2 d-flex justify-content-center align-items-center">
+            <div id="latestValue" class="alert alert-info text-center" role="alert">
+                Actual: <span id="latestValueText">N/A</span>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <label for="fundSelector" class="form-label">Select Fund:</label>
+            <select id="fundSelector" class="form-select mb-3">
+                {% for fund in funds %}
+                    <option value="{{ fund.id }}" {% if fund.id == selected_fund %}selected{% endif %}>{{ fund.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="metricSelector" class="form-label">Select Metric:</label>
+            <select id="metricSelector" class="form-select mb-3">
+                <option value="balance">Balance</option>
+                <option value="daily_performance">Daily Performance</option>
+                <option value="weekly_performance">Weekly Performance</option>
+                <option value="monthly_performance">Monthly Performance</option>
+                <option value="annual_performance">Annual Performance</option>
+                <option value="cumulative_performance">Cumulative Performance</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="currencySelector" class="form-label">Select Currency:</label>
+            <select id="currencySelector" class="form-select mb-3">
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex justify-content-center align-items-center" style="height: 100px;">
+            <button id="updateAssets" class="btn btn-primary">
+                <span id="updateAssetsText">Update Assets</span>
+                <span id="updateAssetsSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+            </button>
+        </div>
+        <div class="col-md-2 d-flex justify-content-center align-items-center" style="height: 100px;">
+            <a id="goToStrategies" class="btn btn-primary">Go to Strategies</a>
+        </div>
+    </div>
+
+    <!-- Grafico -->
+    <div class="row mt-2">
+        <div class="col-md-12">
+            <canvas id="fundChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Tabella di Asset Allocation -->
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <h4 class="text-center">Asset Allocation</h4>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Asset</th>
+                        <th>Amount</th>
+                        <th>Value (USD)</th>
+                        <th>Percentage (%)</th>
+                    </tr>
+                </thead>
+                <tbody id="assetAllocationTable">
+                    {% for asset in funds_data.0.asset_allocation %}
+                    <tr>
+                        <td>{{ asset.name }}</td>
+                        <td>{{ asset.amount }}</td>
+                        <td>{{ asset.value_usd }}</td>
+                        <td>{{ asset.percentage|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.2/dist/chart.umd.js" integrity="sha384-eI7PSr3L1XLISH8JdDII5YN/njoSsxfbrkCTnJrzXt+ENP5MOVBxD+l6sEG4zoLp" crossorigin="anonymous"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var funds = JSON.parse('{{ funds_data|escapejs }}');
+        var fundSelector = document.getElementById('fundSelector');
+        var metricSelector = document.getElementById('metricSelector');
+        var currencySelector = document.getElementById('currencySelector');
+        var fundChartCtx = document.getElementById('fundChart').getContext('2d');
+        var fundChart;
+        var updateButton = document.getElementById('updateAssets');
+        var updateButtonText = document.getElementById('updateAssetsText');
+        var updateButtonSpinner = document.getElementById('updateAssetsSpinner');
+        var assetAllocationTable = document.getElementById('assetAllocationTable');
+        var latestValueText = document.getElementById('latestValueText');
+
+        function updateChart(fundId, metric, currency) {
+            var fund = funds.find(f => f.id === parseInt(fundId));
+            if (fund) {
+                var labels = [];
+                var data = [];
+                var label = '';
+                var chartType = 'line';
+                var backgroundColors = [];
+                var latestValue = 'N/A';
+
+                // Modifica i dati in base alla valuta selezionata
+                if (metric === 'balance') {
+                    labels = fund.balance_labels;
+                    data = currency === 'USD' ? fund.balance_values : fund.balance_values_eur;
+                    label = fund.name + ' Balance (' + currency + ')';
+                    latestValue = data[data.length - 1] || 'N/A';
+                } else if (metric === 'daily_performance') {
+                    labels = fund.daily_labels;
+                    data = currency === 'USD' ? fund.daily_values : fund.daily_values_eur;
+                    label = fund.name + ' Daily Performance (%)';
+                    chartType = 'bar';
+                    latestValue = data[data.length - 1] || 'N/A';
+                } else if (metric === 'weekly_performance'){
+                    labels = fund.weekly_labels;
+                    data = currency === 'USD' ? fund.weekly_values : fund.weekly_values_eur;
+                    label = fund.name + ' Weekly Performance (%)';
+                    chartType = 'bar';
+                    latestValue = data[data.length - 1] || 'N/A';
+                } else if (metric === 'monthly_performance') {
+                    labels = fund.monthly_labels;
+                    data = currency === 'USD' ? fund.monthly_values : fund.monthly_values_eur;
+                    label = fund.name + ' Monthly Performance (%)';
+                    chartType = 'bar';
+                    latestValue = data[data.length - 1] || 'N/A';
+                } else if (metric === 'annual_performance') {
+                    labels = fund.annual_labels;
+                    data = currency === 'USD' ? fund.annual_values : fund.annual_values_eur;
+                    label = fund.name + ' Annual Performance (%)';
+                    chartType = 'bar';
+                    latestValue = data[data.length - 1] || 'N/A';
+                } else if (metric === 'cumulative_performance') {
+                    labels = fund.cumulative_labels;
+                    data = currency === 'USD' ? fund.cumulative_values : fund.cumulative_values_eur;
+                    label = fund.name + ' Cumulative Performance (%)';
+                    latestValue = data[data.length - 1] || 'N/A';
+                }
+
+                if (chartType === 'bar') {
+                    backgroundColors = data.map(value => value < 0 ? 'rgba(255, 99, 132, 0.2)' : 'rgba(75, 192, 192, 0.2)');
+                }
+
+                if (fundChart) {
+                    fundChart.destroy();
+                }
+
+                fundChart = new Chart(fundChartCtx, {
+                    type: chartType,
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: label,
+                            data: data,
+                            borderColor: chartType === 'line' ? 'rgba(75, 192, 192, 1)' : undefined,
+                            backgroundColor: chartType === 'bar' ? backgroundColors : undefined,
+                            borderWidth: 2,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            x: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Value'
+                                }
+                            }
+                        }
+                    }
+                });
+
+                latestValueText.textContent = latestValue;
+                updateAssetAllocationTable(fund);
+            }
+        }
+
+        function updateAssetAllocationTable(fund) {
+            // Clear the current rows
+            while (assetAllocationTable.firstChild) {
+                assetAllocationTable.removeChild(assetAllocationTable.firstChild);
+            }
+
+            // Check if asset_allocation exists and is an array
+            if (Array.isArray(fund.asset_allocation)) {
+                // Populate the table with new rows
+                fund.asset_allocation.forEach(asset => {
+                    var row = document.createElement('tr');
+                    var nameCell = document.createElement('td');
+                    var amountCell = document.createElement('td');
+                    var valueCell = document.createElement('td');
+                    var percentageCell = document.createElement('td');
+
+                    nameCell.textContent = asset.name;
+                    amountCell.textContent = asset.amount.toFixed(2);
+                    valueCell.textContent = asset.value_usd;  // Questo valore è sempre in USD
+                    percentageCell.textContent = asset.percentage.toFixed(2);
+
+                    row.appendChild(nameCell);
+                    row.appendChild(amountCell);
+                    row.appendChild(valueCell);
+                    row.appendChild(percentageCell);
+
+                    assetAllocationTable.appendChild(row);
+                });
+            } else {
+                // If asset_allocation is not available, you can log a message or handle the case accordingly
+                console.warn('No asset allocation data available for the selected fund.');
+            }
+        }
+
+        fundSelector.addEventListener('change', function() {
+            updateChart(this.value, metricSelector.value, currencySelector.value);
+        });
+
+        metricSelector.addEventListener('change', function() {
+            updateChart(fundSelector.value, this.value, currencySelector.value);
+        });
+
+        currencySelector.addEventListener('change', function() {
+            updateChart(fundSelector.value, metricSelector.value, this.value);
+        });
+
+        // Initial load
+        if (funds.length > 0) {
+            updateChart(fundSelector.value, metricSelector.value, currencySelector.value);
+        }
+
+        // Update the link to the strategies page
+        document.getElementById('goToStrategies').addEventListener('click', function(event) {
+            event.preventDefault();
+            var selectedFundId = fundSelector.value;
+            if (selectedFundId) {
+                window.location.href = `/dashboard/funds/${selectedFundId}/strategies/`;
+            } else {
+                alert('Please select a fund first.');
+            }
+        });
+
+        // Update balances on button click
+        updateButton.addEventListener('click', function() {
+            updateButton.disabled = true;  // Disable the button
+            updateButtonText.textContent = 'Updating...';  // Change the button text
+            updateButtonSpinner.classList.remove('d-none');  // Show the spinner
+
+            fetch('{% url "update_assets" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}' // Include CSRF token for security
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateButton.disabled = false;  // Enable the button
+                updateButtonText.textContent = 'Update Assets';  // Restore the button text
+                updateButtonSpinner.classList.add('d-none');  // Hide the spinner
+
+                if (data.status === 'success') {
+                    funds = data.funds_data; // Update funds data with the new data from the server
+                    updateChart(fundSelector.value, metricSelector.value, currencySelector.value); // Update the chart
+                } else {
+                    alert('Failed to update balances: ' + data.message);
+                }
+            })
+            .catch(error => {
+                updateButton.disabled = false;  // Enable the button
+                updateButtonText.textContent = 'Update Assets';  // Restore the button text
+                updateButtonSpinner.classList.add('d-none');  // Hide the spinner
+
+                console.error('Error:', error);
+                alert('An error occurred while updating balances.');
+            });
+        });
+    });
+</script>
+{% endblock %}

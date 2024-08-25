@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}All Reports{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>All Saved Reports</h2>
+    <ul class="list-unstyled">
+        {% for report in reports %}
+        <li>
+            <a href="{% url 'download_report' report.id %}">{{ report.name }}</a>
+            <span class="text-muted">Saved on {{ report.date }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

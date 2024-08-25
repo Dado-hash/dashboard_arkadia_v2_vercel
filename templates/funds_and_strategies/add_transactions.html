@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Transactions{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h2 class="text-center">Add Transactions</h2>
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                {{ formset.management_form }}
+                <div id="formset-container">
+                    {% for form in formset %}
+                        <div class="transaction-form mb-3 p-3 border rounded">
+                            {{ form.as_p }}
+                            <button type="button" class="btn btn-danger remove-form">Remove</button>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="d-grid gap-2 mt-3">
+                    <button type="button" id="add-form" class="btn btn-success">Add Transaction</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+            {% for message in messages %}
+                <div class="alert alert-info mt-3">{{ message }}</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        var formsetContainer = $('#formset-container');
+        var formsetTotalForms = $('#id_form-TOTAL_FORMS');
+        var formTemplate = `
+            <div class="transaction-form mb-3 p-3 border rounded">
+                <div class="mb-3">
+                    <label for="id_form-__prefix__-type">Type:</label>
+                    <select name="form-__prefix__-type" required class="form-select" id="id_form-__prefix__-type">
+                        <option value="deposit">Deposit</option>
+                        <option value="withdrawal">Withdrawal</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="id_form-__prefix__-asset">Ticker:</label>
+                    <input type="text" name="form-__prefix__-asset" maxlength="255" required class="form-control" id="id_form-__prefix__-asset">
+                </div>
+                <div class="mb-3">
+                    <label for="id_form-__prefix__-amount">Amount:</label>
+                    <input type="number" name="form-__prefix__-amount" step="0.01" required class="form-control" id="id_form-__prefix__-amount">
+                </div>
+                <div class="mb-3">
+                    <label for="id_form-__prefix__-price">Price:</label>
+                    <input type="number" name="form-__prefix__-price" step="0.01" required class="form-control" id="id_form-__prefix__-price">
+                </div>
+                <div class="mb-3">
+                    <label for="id_form-__prefix__-date">Date:</label>
+                    <input type="date" name="form-__prefix__-date" required class="form-control" id="id_form-__prefix__-date">
+                </div>
+                <div class="mb-3">
+                    <label for="id_form-__prefix__-fund">Fund:</label>
+                    <select name="form-__prefix__-fund" class="form-select" id="id_form-__prefix__-fund">
+                        <option value="">---------</option>
+                        {% for fund in funds %}
+                            <option value="{{ fund.id }}">{{ fund.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="id_form-__prefix__-strategy">Strategy:</label>
+                    <select name="form-__prefix__-strategy" class="form-select" id="id_form-__prefix__-strategy">
+                        <option value="">---------</option>
+                        {% for strategy in strategies %}
+                            <option value="{{ strategy.id }}">{{ strategy.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="button" class="btn btn-danger remove-form">Remove</button>
+            </div>
+        `;
+
+        $('#add-form').click(function() {
+            var newForm = $(formTemplate.replace(/__prefix__/g, formsetTotalForms.val()));
+            formsetTotalForms.val(parseInt(formsetTotalForms.val()) + 1);
+            formsetContainer.append(newForm);
+        });
+
+        formsetContainer.on('click', '.remove-form', function() {
+            $(this).closest('.transaction-form').remove();
+            formsetTotalForms.val(parseInt(formsetTotalForms.val()) - 1);
+        });
+
+        // Ensure only one of fund or strategy can be selected
+        formsetContainer.on('change', 'select[id^="id_form-"][id$="-fund"], select[id^="id_form-"][id$="-strategy"]', function() {
+            var fundField = $(this).closest('.transaction-form').find('select[id$="-fund"]');
+            var strategyField = $(this).closest('.transaction-form').find('select[id$="-strategy"]');
+
+            if (fundField.val()) {
+                strategyField.prop('disabled', true);
+            } else {
+                strategyField.prop('disabled', false);
+            }
+
+            if (strategyField.val()) {
+                fundField.prop('disabled', true);
+            } else {
+                fundField.prop('disabled', false);
+            }
+        });
+    });
+</script>
+{% endblock %}

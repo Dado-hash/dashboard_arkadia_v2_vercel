@@ -1,0 +1,22 @@
+<!-- templates/settings.html -->
+{% extends 'base.html' %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h2 class="text-center">Settings</h2>
+            <div class="d-grid gap-2 mt-4">
+                <a href="{% url 'add_assets' %}" class="btn btn-primary btn-lg">Add Assets</a>
+                <a href="{% url 'add_transactions' %}" class="btn btn-primary btn-lg">Add Transactions</a>
+                <a href="{% url 'save_fund' %}" class="btn btn-primary btn-lg">Add Fund</a>
+                <a href="{% url 'save_strategy' %}" class="btn btn-primary btn-lg">Add Strategy</a>
+                <a href="{% url 'save_api_keys' %}" class="btn btn-primary btn-lg">Add Exchange Api Keys</a>
+                <a href="{% url 'save_wallet' %}" class="btn btn-primary btn-lg">Add Wallet</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

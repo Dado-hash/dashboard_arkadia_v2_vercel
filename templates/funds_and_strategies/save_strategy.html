@@ -1,0 +1,56 @@
+<!-- templates/save_strategy.html -->
+{% extends 'base.html' %}
+
+{% block title %}Save Strategy{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h2 class="text-center">Save Strategy</h2>
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                <div class="mb-3">
+                    {{ form.name.label_tag }}
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <div class="text-danger">
+                            {{ form.name.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.fund.label_tag }}
+                    {{ form.fund }}
+                    {% if form.fund.errors %}
+                        <div class="text-danger">
+                            {{ form.fund.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.description.label_tag }}
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <div class="text-danger">
+                            {{ form.description.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.manual.label_tag }}
+                    {{ form.manual }}
+                    {% if form.manual.errors %}
+                        <div class="text-danger">
+                            {{ form.manual.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
